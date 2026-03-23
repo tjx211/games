@@ -14,12 +14,8 @@ from kivy.uix.screenmanager import ScreenManager, Screen, FadeTransition
 import sys
 import os
 
-# 确保能正确导入 src 目录下的包
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-# ---------------------------------------------------------
-# 模块导入区
-# ---------------------------------------------------------
 try:
     from src.managers.grid_manager import GridManager
 except ImportError:
@@ -29,20 +25,14 @@ from src.managers.score_manager import ScoreManager
 from src.ui.result_dialog import ResultDialog
 from src.main_menu import MainMenuScreen
 
-# 模拟手机竖屏
 Window.size = (450, 800)
 
-# ==========================================
-# 🎨 视觉配置区
-# ==========================================
 CONFIG = {
     'BOARD_GAP_COLOR': (0, 0, 0, 0.2),  
     'CELL_BG_COLOR': (1, 1, 1, 0.15), 
-    
     'GLOW_COLOR_JELLY': (0.2, 0.9, 0.2, 0.5), 
     'GLOW_COLOR_CHEST': (0.9, 0.7, 0.2, 0.5), 
     'GLOW_COLOR_BASKET': (1, 1, 1, 0.8),     
-    
     'BLOCK_BG_COLOR': (0, 0, 0, 0.7),   
     'GLOBAL_BACKGROUND': 'assets/images/background/1.jpg',
 }
@@ -63,9 +53,6 @@ SPECIAL_IMAGE_MAP = {
     'barrier': 'assets/images/special/barrier.png', 
 }
 
-# ==========================================
-# 🧩 游戏内 UI 组件区
-# ==========================================
 class CellWidget(Widget):
     def __init__(self, grid_x, grid_y, **kwargs):
         super().__init__(**kwargs)
@@ -76,7 +63,6 @@ class CellWidget(Widget):
         with self.canvas.before:
             self.bg_color_instr = Color(*CONFIG['CELL_BG_COLOR']) 
             self.bg_rect = Rectangle(pos=self.pos, size=self.size)
-
             self.glow_color = Color(1, 1, 1, 0) 
             self.glow_rect = Rectangle(pos=self.pos, size=self.size)
         
@@ -93,7 +79,6 @@ class CellWidget(Widget):
 
         if not self.is_selected:
             if self.special_type == 'basket':
-                # 🏀 核心修改：篮子极度顶格（1.3倍放大），展现吞噬感
                 self.img.size = (self.width * 1.3, self.height * 1.3)
             elif self.special_type == 'barrier':
                 self.img.size = (self.width, self.height)
@@ -106,7 +91,6 @@ class CellWidget(Widget):
     def update_view(self, cell_data):
         self.is_selected = False 
         self.img.source = ''
-        # 👑 极其关键：必须恢复透明度为1，否则新长出来的材料是隐形的！
         self.img.opacity = 1 
         self.canvas.after.clear()
         
@@ -146,24 +130,20 @@ class CellWidget(Widget):
         self.update_rect()
 
     def _trigger_glow_animation(self, sp_type):
-        if sp_type == 'jelly':
-            self.glow_color.rgba = CONFIG['GLOW_COLOR_JELLY']
-        elif sp_type == 'chest':
-            self.glow_color.rgba = CONFIG['GLOW_COLOR_CHEST']
-        elif sp_type == 'basket':
+        if sp_type == 'jelly': self.glow_color.rgba = CONFIG['GLOW_COLOR_JELLY']
+        elif sp_type == 'chest': self.glow_color.rgba = CONFIG['GLOW_COLOR_CHEST']
+        elif sp_type == 'basket': 
             self.glow_color.rgba = CONFIG['GLOW_COLOR_BASKET']
             self.glow_color.a = 0.1 
         
-        anim = Animation(a=0.5, duration=1.2, t='in_out_quad') + \
-               Animation(a=0.1, duration=1.2, t='in_out_quad')
+        anim = Animation(a=0.5, duration=1.2, t='in_out_quad') + Animation(a=0.1, duration=1.2, t='in_out_quad')
         anim.repeat = True 
         anim.start(self.glow_color)
 
     def animate_select(self):
         if not self.is_selected and self.img.source:
             self.is_selected = True
-            anim = Animation(size=(self.width + 10, self.height + 10), center=self.center, duration=0.1)
-            anim.start(self.img)
+            Animation(size=(self.width + 10, self.height + 10), center=self.center, duration=0.1).start(self.img)
 
     def animate_deselect(self):
         if self.is_selected and self.img.source:
@@ -173,6 +153,7 @@ class CellWidget(Widget):
 class GameBoard(Widget):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        # 初始化默认7x7，稍后会被 GameScreen 接管重构
         self.game_logic = GridManager(cols=7, rows=7)
         self.grid_layout = GridLayout(cols=7, rows=7, size_hint=(None, None))
         self.add_widget(self.grid_layout)
@@ -185,25 +166,29 @@ class GameBoard(Widget):
         self.add_widget(self.floating_score)
         self.cell_widgets = {}
         self.bind(pos=self.update_layout, size=self.update_layout)
-        self.init_board_ui()
 
     def update_layout(self, *args):
         self.grid_layout.pos, self.grid_layout.size = self.pos, self.size
         self.bg_board.pos, self.bg_board.size = self.pos, self.size
         self.update_visual_feedback()
 
-    def init_board_ui(self):
+    # 新增：动态重构网格（用于连续关卡扩容）
+    def rebuild_board(self, cols, rows):
+        self.grid_layout.cols = cols
+        self.grid_layout.rows = rows
         self.grid_layout.clear_widgets()
-        for y in range(6, -1, -1):
-            for x in range(7):
+        self.cell_widgets.clear()
+        # 注意 y 的遍历方向，保证 [0][0] 在最下
+        for y in range(rows - 1, -1, -1):
+            for x in range(cols):
                 cell_ui = CellWidget(grid_x=x, grid_y=y)
                 self.grid_layout.add_widget(cell_ui)
                 self.cell_widgets[(x, y)] = cell_ui
         self.refresh_all_cells()
 
     def refresh_all_cells(self):
-        for y in range(7):
-            for x in range(7):
+        for y in range(self.game_logic.rows):
+            for x in range(self.game_logic.cols):
                 self.cell_widgets[(x, y)].update_view(self.game_logic.grid[y][x])
         self.update_visual_feedback()
 
@@ -245,29 +230,21 @@ class GameBoard(Widget):
         self.floating_score.opacity = 1
         self.floating_score.center = (last_ui.center_x + 35, last_ui.center_y + 45)
 
-    # ==========================================
-    # 🏃 核心动画引擎：吞噬与呼吸状态机
-    # ==========================================
     def animate_basket_move(self, on_complete_callback):
         path = self.game_logic.path
         if len(path) < 2:
             on_complete_callback()
             return
 
-        # 1. 锁定起点 UI 和基础尺寸
         start_ui = self.cell_widgets[(path[0].x, path[0].y)]
         base_w, base_h = start_ui.width * 1.3, start_ui.height * 1.3
         
-        # 2. 生成一个临时动画替身，顶层渲染
         temp_basket = Image(
             source=SPECIAL_IMAGE_MAP['basket'],
-            size=(base_w, base_h),
-            center=start_ui.center,
+            size=(base_w, base_h), center=start_ui.center,
             allow_stretch=True, keep_ratio=True
         )
         self.add_widget(temp_basket)
-        
-        # 隐藏真实格子里原来的篮子
         start_ui.img.opacity = 0
         
         step_idx = 1
@@ -275,7 +252,6 @@ class GameBoard(Widget):
         def animate_next_step(*args):
             nonlocal step_idx
             if step_idx >= len(path):
-                # 动画全部结束，销毁替身并通知主界面执行数据更新
                 self.remove_widget(temp_basket)
                 on_complete_callback()
                 return
@@ -283,21 +259,15 @@ class GameBoard(Widget):
             target_cell = path[step_idx]
             target_ui = self.cell_widgets[(target_cell.x, target_cell.y)]
             
-            # 第一段：极速平滑位移到下一个格子
             move_anim = Animation(center=target_ui.center, duration=0.15, t='out_quad')
             
             def on_move_complete(*args):
-                # ⭐ 视觉需求闭环：到达格子的一瞬间，该格子原有材料彻底消失（被吞噬）
                 target_ui.img.opacity = 0
-                
-                # 第二段：执行弹性的呼吸放大（瞬间放大1.15倍再缩回）
                 breathe_anim = Animation(size=(base_w * 1.15, base_h * 1.15), duration=0.08, t='out_quad') + \
                                Animation(size=(base_w, base_h), duration=0.08, t='in_quad')
-                
                 def on_breathe_complete(*args):
                     nonlocal step_idx
                     step_idx += 1
-                    # 递归调用下一帧
                     animate_next_step()
                 
                 breathe_anim.bind(on_complete=on_breathe_complete)
@@ -306,14 +276,25 @@ class GameBoard(Widget):
             move_anim.bind(on_complete=on_move_complete)
             move_anim.start(temp_basket)
 
-        # 启动动画序列
         animate_next_step()
+
+    #  新增：华丽洗牌动画
+    def animate_shuffle(self):
+        """让所有非篮子、非障碍物的材料缩小再放大，制造洗牌视觉"""
+        for (x, y), cell_ui in self.cell_widgets.items():
+            if cell_ui.special_type not in ['basket', 'barrier']:
+                original_size = cell_ui.img.size
+                anim = Animation(size=(0, 0), duration=0.2, t='in_quad') + \
+                       Animation(size=original_size, duration=0.3, t='out_bounce')
+                anim.start(cell_ui.img)
+
 
 class GameScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.score_manager = ScoreManager()
-        self.turns_left = 99
+        self.current_stage = 1 # 连续闯关记录
+        
         self.main_layout = BoxLayout(orientation='vertical')
         
         with self.canvas.before:
@@ -321,14 +302,15 @@ class GameScreen(Screen):
             self.bg_rect = Rectangle(pos=self.pos, size=self.size, source=CONFIG['GLOBAL_BACKGROUND'])
         self.bind(pos=self.update_global_bg, size=self.update_global_bg)
 
+        # HUD 加入了目标分数显示
         self.header = BoxLayout(orientation='horizontal', size_hint=(1, 0.1), padding=[20, 0])
         with self.header.canvas.before:
             Color(1, 1, 1, 0.1) 
             self.header_bg = Rectangle(pos=self.header.pos, size=self.header.size)
         self.header.bind(pos=self.update_header_bg, size=self.update_header_bg)
 
-        self.turn_label = Label(text="步数: --", font_size=24, bold=True, color=(0.8, 0, 0, 1), font_name='simhei')
-        self.score_label = Label(text="得分: 0", font_size=24, bold=True, color=(0, 0, 0, 1), font_name='simhei')
+        self.turn_label = Label(text="步数: --", font_size=20, bold=True, color=(0.8, 0, 0, 1), font_name='simhei')
+        self.score_label = Label(text="得分: 0 / 目标: 0", font_size=20, bold=True, color=(0, 0, 0, 1), font_name='simhei')
         self.header.add_widget(self.turn_label); self.header.add_widget(self.score_label)
         self.main_layout.add_widget(self.header)
         
@@ -337,7 +319,7 @@ class GameScreen(Screen):
 
         bottom = BoxLayout(orientation='horizontal', size_hint=(1, 0.15), padding=20, spacing=20)
         self.exit_btn = Button(text="结算", font_name='simhei', size_hint=(0.3, 1), background_color=(0.5, 0.5, 0.5, 0.6))
-        self.exit_btn.bind(on_release=lambda x: self.trigger_settlement())
+        self.exit_btn.bind(on_release=lambda x: self.trigger_settlement(False))
         self.go_btn = Button(text="出  发", font_size=35, bold=True, font_name='simhei', background_color=(0.9, 0.4, 0.5, 0.8), size_hint=(0.7, 1))
         self.go_btn.bind(on_release=self.on_go_pressed)
         bottom.add_widget(self.exit_btn); bottom.add_widget(self.go_btn)
@@ -347,41 +329,72 @@ class GameScreen(Screen):
     def update_header_bg(self, *args): self.header_bg.pos, self.header_bg.size = self.header.pos, self.header.size
 
     def on_enter(self):
-        level = getattr(App.get_running_app(), 'selected_difficulty', 1)
-        self.turns_left = 999 if level == 1 else (15 if level == 2 else 10)
+        """进入游戏，开始第一关"""
+        base_diff = getattr(App.get_running_app(), 'selected_difficulty', 1)
+        # 根据大难度基调，决定起始关卡的参数
+        self.current_stage = 1
+        self.base_difficulty = base_diff
+        self.score_manager.reset()
+        self.load_stage_config()
+
+    def load_stage_config(self):
+        """ 连续关卡核心机制：动态配置每一关的网格和目标"""
+        stage = self.current_stage
+        # ⭐修改难度步数及临界分值
+        # 网格扩容逻辑：第一关 7x7, 第二关 8x8, 第三关 10x10...
+        if stage == 1: cols, rows, turns, target = 7, 7, 10, 8000
+        elif stage == 2: cols, rows, turns, target = 7, 8, 15, 12000
+        elif stage == 3: cols, rows, turns, target = 8, 8, 20, 15000
+        elif stage == 4: cols, rows, turns, target = 8, 9, 25, 20000
+        elif stage == 5: cols, rows, turns, target = 9, 9, 35, 30000
+        else: cols, rows, turns, target = 10, 10, 25, 60 + (stage-3)*3000
+        
+        self.turns_left = 999 if self.base_difficulty == 1 else turns
+        self.target_score = target
+        
+        # 难度递增：根据关卡决定特殊道具和障碍物刷新率
+        logic_diff = 1 if stage == 1 else (2 if stage == 2 else 3)
+        
+        # 让大脑和UI同时重建！
+        self.board.game_logic.load_level(cols, rows, logic_diff)
+        self.board.rebuild_board(cols, rows)
         self.update_ui_text()
-        self.board.game_logic.init_board(difficulty=level)
-        self.board.refresh_all_cells()
 
     def update_ui_text(self):
-        self.score_label.text = f"得分: {self.score_manager.current_score}"
-        self.turn_label.text = f"步数: {'∞' if self.turns_left > 100 else self.turns_left}"
+        self.score_label.text = f"得分: {self.score_manager.current_score} / 目标: {self.target_score}"
+        self.turn_label.text = f"第{self.current_stage}关 | 步数: {'∞' if self.turns_left > 100 else self.turns_left}"
 
     def on_go_pressed(self, instance):
         if len(self.board.game_logic.path) > 1:
-            # ⭐ 锁定 UI 防止动画穿帮
             self.go_btn.disabled = True
             
-            # 等待篮子沿途吞噬动画完毕后的闭环回调
             def after_animation():
                 if self.turns_left < 900: self.turns_left -= 1
                 self.score_manager.add_score(self.score_manager.calculate_line_score(len(self.board.game_logic.path)))
                 self.update_ui_text()
                 
-                # 提交给底层计算
+                # 消除并长出新材料
                 self.board.game_logic.execute_collection()
                 
-                # 重绘 UI（那些刚才消失的位置会长出新材料）
+                # 死局检测与洗牌接入！
+                if self.board.game_logic.check_deadlock():
+                    self.board.game_logic.shuffle()
+                    self.board.animate_shuffle()
+
                 self.board.refresh_all_cells()
                 self.board.floating_score.opacity = 0 
                 self.go_btn.disabled = False
                 
-                if self.turns_left <= 0: self.trigger_settlement()
+                # 胜负判定：分够了进入下一关，步数没了游戏结束
+                if self.score_manager.current_score >= self.target_score:
+                    self.current_stage += 1
+                    self.load_stage_config()
+                elif self.turns_left <= 0: 
+                    self.trigger_settlement(True)
 
-            # 触发动画状态机
             self.board.animate_basket_move(after_animation)
 
-    def trigger_settlement(self):
+    def trigger_settlement(self, is_game_over):
         ResultDialog(final_score=self.score_manager.current_score, stars=self.score_manager.get_star_rating(),
                      on_restart_callback=self.on_enter, on_exit_callback=self.return_to_menu).open()
 

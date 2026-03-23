@@ -19,7 +19,7 @@ class MainMenuScreen(Screen):
             )
         self.bind(pos=self.update_bg, size=self.update_bg)
 
-        # 🚀 修复核心：明确定义 layout 容器
+        # 明确定义 layout 容器
         layout = BoxLayout(orientation='vertical', padding=40, spacing=20)
         
         # 2. 游戏标题

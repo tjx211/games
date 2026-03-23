@@ -12,7 +12,7 @@ from kivy.core.window import Window
 from kivy.animation import Animation
 import os
 
-from main_logic import GridManager # 导入之前的底层逻辑
+from src.managers.grid_manager import GridManager # 导入之前的底层逻辑
 
 Window.size = (450, 800)
 
