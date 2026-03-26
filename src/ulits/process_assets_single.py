@@ -11,7 +11,7 @@ def matted_png_solid_fill(source_path, output_filename, target_size=128):
     # 1. 加载图片
     img = cv2.imread(source_path, cv2.IMREAD_UNCHANGED)
     if img is None:
-        print(f"❌ 找不到图片: {source_path}")
+        print(f"找不到图片: {source_path}")
         return
 
     print(f"正在处理素材: {source_path}...")
@@ -31,7 +31,7 @@ def matted_png_solid_fill(source_path, output_filename, target_size=128):
     contours, _ = cv2.findContours(alpha, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     
     if not contours:
-        print("❌ 警告：未找到有效物体，无法安全抠图。")
+        print("警告：未找到有效物体，无法安全抠图。")
         return
         
     c = max(contours, key=cv2.contourArea)

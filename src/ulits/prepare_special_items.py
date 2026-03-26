@@ -18,7 +18,7 @@ def process_special_item(source_filename, output_name, target_size=128):
     # 1. 读取 JPG 原图
     img = cv2.imread(source_path, cv2.IMREAD_COLOR)
     if img is None:
-        print(f"❌ 错误：无法读取原图 {source_path}，请确保原图在当前目录下！")
+        print(f"错误：无法读取原图 {source_path}，请确保原图在当前目录下！")
         return
 
     # 2. 转为灰度图并轻微模糊，减少噪点对边缘判断的干扰
@@ -32,7 +32,7 @@ def process_special_item(source_filename, output_name, target_size=128):
     contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     
     if not contours:
-        print("❌ 警告：未找到有效轮廓，无法安全抠图。")
+        print("警告：未找到有效轮廓，无法安全抠图。")
         return
         
     # 找到面积最大的轮廓，即星星/饼干本体

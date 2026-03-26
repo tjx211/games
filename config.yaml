@@ -1,0 +1,43 @@
+gameplay:
+  base_points_per_item: 10
+
+visuals:
+  colors:
+    board_gap: [0, 0, 0, 0.2]
+    cell_bg: [1, 1, 1, 0.15]
+    basket_bg: [0.7, 0.2, 0.2, 0.6]
+    block_bg: [0, 0, 0, 0.7]
+    glow_jelly: [0.2, 0.9, 0.2, 0.5]
+    glow_chest: [0.9, 0.7, 0.2, 0.5]
+    glow_basket: [1, 1, 1, 0.8]
+    hud_bg: [1, 1, 1, 0.1]
+
+assets:
+  global_background: "assets/images/background/1.jpg"
+  star_icon: "assets/images/materials/start.png"
+  
+  ui:
+    btn_return: ""  
+    btn_quit: ""    
+    btn_help: ""    
+
+  # ⭐ 新增：说明书文本路径与图文动态映射字典
+  manual_file: "assets/manual.txt"
+  manual_images:
+    clock: "assets/images/special/clock.png"
+    star_gem: "assets/images/special/star_gem.png"
+
+  materials:
+    蓝鱼: "assets/images/materials/fish.png"
+    橘盘: "assets/images/materials/palette.png"
+    粉纸: "assets/images/materials/paper.png"
+    紫结: "assets/images/materials/bow.png"
+    粉花: "assets/images/materials/flower.png"
+    蓝心: "assets/images/materials/heart.png"
+  special:
+    jelly: "assets/images/special/jelly.png"
+    chest: "assets/images/special/chest.png"
+    basket: "assets/images/special/basket.png"
+    barrier: "assets/images/special/barrier.png"
+    clock: "assets/images/special/clock.png"        
+    star_gem: "assets/images/special/star_gem.png"

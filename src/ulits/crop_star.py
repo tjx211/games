@@ -6,7 +6,7 @@ def process_single_image(source_path, output_path, target_size=128):
     # 1. 读取原图
     img = cv2.imread(source_path, cv2.IMREAD_COLOR)
     if img is None:
-        print(f"❌ 错误：无法读取原图，请检查 {source_path} 是否在当前目录！")
+        print(f"错误：无法读取原图，请检查 {source_path} 是否在当前目录！")
         return
 
     print(f"正在使用【轮廓实心填充法】处理单张素材: {source_path}")

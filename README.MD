@@ -1,40 +1,35 @@
 ## 项目结构图：
 ```bash
 .../
-├── assets/
-│   └── images/
-│       ├── background/                 # 全局沉浸式背景图
-│       │   └── 1.jpg                   
-│       ├── materials/                  # 基础材料素材图
-│       │   ├── bow.png                 
-│       │   ├── fish.png                
-│       │   ├── flower.png              
-│       │   ├── heart.png               
-│       │   ├── palette.png          
-│       │   ├── paper.png              
-│       │   └── start.png               # 结算页面星星图
-│       └── special/                    # 特殊道具与交互实体图
-│           ├── barrier.png             # 墙壁（障碍物）
-│           ├── basket.png              # 篮子（连线起点与移动主体）
-│           ├── chest.png               # 宝箱（万能桥接点）
-│           └── jelly.png               # 果冻（换色中转站）
-├── src/
-│   ├── managers/
-│   │   ├── grid_manager.py             # 底层大脑：多级状态机连线、难度生成与位移逻辑
-│   │   └── score_manager.py            # 计分、连击加成与星级评定逻辑
-│   ├── ui/
-│   │   └── result_dialog.py            # 结算弹窗 UI 表现层
-│   ├── utlits/                         # 素材处理与辅助工具包
-│   │   ├── crop_star.py                # 处理星星抠图与去底
-│   │   ├── prepare_special_items.py    # 果冻和宝箱的抠图与透明化
-│   │   └── process_assets_single.py    # 篮子和墙壁抠图与对齐
-│   └── main_menu.py                    # 主菜单与难度选择场景
-└── main.py                             # 程序主入口、渲染管线、动画表现层与场景控制
+|-- config.yaml                     # 全局配置文件 (关卡数值、掉落概率、颜色、贴图路径集中控制)
+|-- main.py                         # 纯粹的程序主入口 (初始化 App 与转场管理器)
+|
+|-- assets/                         # 静态资源存储区
+|   |-- images/                     # 贴图
+|
+`-- src/                            # 核心源代码目录
+    |-- managers/                   # 数据逻辑与状态管理层 (Model)
+    |   |-- config_manager.py       # 配置读取引擎 (解析 YAML)
+    |   |-- grid_manager.py         # 底层 (寻路、换色、死局检测、洗牌、动态扩容)
+    |   `-- score_manager.py        # 计分公式、星级与连击加成计算
+    |
+    |-- screens/                    # 场景调度控制层 (Controller)
+    |   |-- game_screen.py          # 游戏主场景 (HUD更新、回合判定、关卡推进调度)
+    |   `-- main_menu.py            # 主菜单场景 (难度选择与全局状态初始化)
+    |
+    |-- ui/                         # 独立表现渲染层 (View)
+    |   |-- game_board.py           # 棋盘UI管线 (CellWidget封装、触控拦截、连线绘制、逐帧动画)
+    |   `-- result_dialog.py        # 结算弹窗模态框
+    |
+    `-- utils/                      # 工程辅助脚本工具箱
+        |-- crop_star.py            # 星星去底透明化处理
+        |-- prepare_special_items.py # 宝箱/果冻实心填充抠图
+        `-- process_assets_single.py # 篮子/墙壁精细裁剪对齐                      
+
 ```
 
 ## 玩法说明
 
-这是一份精简后的游戏说明：
 
 - **核心目标**：在限定步数内规划最长连线路径，让篮子吞噬材料，利用道具打出高连击获得高分。
 - **基础操作**：每次连线必须从篮子所在格子开始，可沿8个方向连接相邻的同色材料；沿原路滑回可撤销，松开手指不代表结束，需点击“出发”按钮才执行路径。
